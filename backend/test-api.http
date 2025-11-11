@@ -1,0 +1,604 @@
+### MBG Inventory API Testing
+### Base URL
+@baseUrl = http://localhost:3030/api
+@token = 
+
+### ============================================
+### 1. HEALTH CHECK
+### ============================================
+
+### Health Check
+GET {{baseUrl}}/health
+
+### ============================================
+### 2. AUTHENTICATION & USERS
+### ============================================
+
+### Register User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@mbg.org",
+  "password": "admin123",
+  "name": "Admin MBG",
+  "role": "ADMIN"
+}
+
+### Login (Save token untuk request selanjutnya)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@mbg.org",
+  "password": "admin123"
+}
+
+### Get Profile
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{token}}
+
+### Get All Users
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+### Approve User (Update user ID sesuai response register)
+PATCH {{baseUrl}}/users/USER_ID_HERE/approve
+Authorization: Bearer {{token}}
+
+### ============================================
+### 3. MASTER DATA - CATEGORIES
+### ============================================
+
+### Create Category - Bahan Pokok
+# @name createCategoryBahanPokok
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Bahan Pokok",
+  "code": "BP",
+  "description": "Bahan makanan pokok seperti beras, gula, minyak"
+}
+
+### Create Category - Bumbu
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Bumbu Dapur",
+  "code": "BD",
+  "description": "Bumbu dan rempah-rempah"
+}
+
+### Create Category - Protein
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Protein",
+  "code": "PROT",
+  "description": "Ayam, daging, ikan, telur"
+}
+
+### Get All Categories
+GET {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+
+### Get Category by ID
+GET {{baseUrl}}/categories/CATEGORY_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### 4. MASTER DATA - LOCATIONS
+### ============================================
+
+### Create Location - Gudang Utama
+# @name createGudang
+POST {{baseUrl}}/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Gudang Utama",
+  "code": "GU01",
+  "type": "WAREHOUSE",
+  "capacity": 1000,
+  "address": "Jl. Masjid No. 1, Baitul Ghafur"
+}
+
+### Create Location - Dapur
+# @name createKitchen
+POST {{baseUrl}}/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Dapur Produksi",
+  "code": "DP01",
+  "type": "KITCHEN",
+  "capacity": 500,
+  "address": "Jl. Masjid No. 2, Baitul Ghafur"
+}
+
+### Create Location - Distribution Center
+POST {{baseUrl}}/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Pusat Distribusi",
+  "code": "DC01",
+  "type": "DISTRIBUTION_CENTER",
+  "capacity": 300,
+  "address": "Jl. Masjid No. 3, Baitul Ghafur"
+}
+
+### Get All Locations
+GET {{baseUrl}}/locations
+Authorization: Bearer {{token}}
+
+### ============================================
+### 5. INVENTORY - ITEMS
+### ============================================
+
+### Create Item - Beras
+# @name createItemBeras
+POST {{baseUrl}}/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Beras Premium",
+  "code": "BRS001",
+  "categoryId": "CATEGORY_ID_BAHAN_POKOK",
+  "unit": "KG",
+  "reorderPoint": 100,
+  "price": 15000,
+  "description": "Beras premium kualitas terbaik"
+}
+
+### Create Item - Ayam
+POST {{baseUrl}}/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ayam Broiler",
+  "code": "AYM001",
+  "categoryId": "CATEGORY_ID_PROTEIN",
+  "unit": "KG",
+  "reorderPoint": 50,
+  "price": 35000,
+  "description": "Ayam broiler segar"
+}
+
+### Create Item - Minyak Goreng
+POST {{baseUrl}}/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Minyak Goreng",
+  "code": "MYK001",
+  "categoryId": "CATEGORY_ID_BAHAN_POKOK",
+  "unit": "LITER",
+  "reorderPoint": 30,
+  "price": 18000,
+  "description": "Minyak goreng kemasan"
+}
+
+### Create Item - Nasi Box (Finished Goods)
+POST {{baseUrl}}/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nasi Box Ayam",
+  "code": "NBA001",
+  "categoryId": "CATEGORY_ID_FINISHED_GOODS",
+  "unit": "PORTION",
+  "reorderPoint": 0,
+  "price": 25000,
+  "description": "Nasi box dengan ayam rendang"
+}
+
+### Get All Items
+GET {{baseUrl}}/items
+Authorization: Bearer {{token}}
+
+### Get Items by Category
+GET {{baseUrl}}/items?categoryId=CATEGORY_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### 6. INVENTORY - STOCK
+### ============================================
+
+### Get Stock
+GET {{baseUrl}}/stock
+Authorization: Bearer {{token}}
+
+### Get Stock by Location
+GET {{baseUrl}}/stock?locationId=LOCATION_ID_HERE
+Authorization: Bearer {{token}}
+
+### Manual Stock Adjustment (Add Stock)
+POST {{baseUrl}}/stock/adjust
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "itemId": "ITEM_ID_BERAS",
+  "locationId": "LOCATION_ID_GUDANG",
+  "quantity": 100,
+  "type": "ADJUSTMENT",
+  "batchNumber": "MANUAL001",
+  "expiryDate": "2026-01-01",
+  "reason": "Initial stock"
+}
+
+### Get Stock History
+GET {{baseUrl}}/stock/history?itemId=ITEM_ID_HERE&locationId=LOCATION_ID_HERE
+Authorization: Bearer {{token}}
+
+### Get Low Stock Alerts
+GET {{baseUrl}}/stock/low
+Authorization: Bearer {{token}}
+
+### Get Expiring Stock
+GET {{baseUrl}}/stock/expiring?days=30
+Authorization: Bearer {{token}}
+
+### ============================================
+### 7. PROCUREMENT - SUPPLIERS
+### ============================================
+
+### Create Supplier
+# @name createSupplier
+POST {{baseUrl}}/suppliers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "PT Sumber Pangan Nusantara",
+  "code": "SPN001",
+  "email": "contact@spn.com",
+  "phone": "021-12345678",
+  "address": "Jakarta Pusat",
+  "contactPerson": "Budi Santoso"
+}
+
+### Get All Suppliers
+GET {{baseUrl}}/suppliers
+Authorization: Bearer {{token}}
+
+### Verify Supplier
+PATCH {{baseUrl}}/suppliers/SUPPLIER_ID_HERE/verify
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isVerified": true
+}
+
+### Update Supplier Rating
+PATCH {{baseUrl}}/suppliers/SUPPLIER_ID_HERE/rating
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rating": 4.5
+}
+
+### ============================================
+### 8. PROCUREMENT - PURCHASE ORDERS
+### ============================================
+
+### Create Purchase Order
+# @name createPO
+POST {{baseUrl}}/purchase-orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "supplierId": "SUPPLIER_ID_HERE",
+  "warehouseLocationId": "LOCATION_ID_GUDANG",
+  "expectedDate": "2025-12-01",
+  "items": [
+    {
+      "itemId": "ITEM_ID_BERAS",
+      "quantity": 500,
+      "unitPrice": 15000
+    },
+    {
+      "itemId": "ITEM_ID_AYAM",
+      "quantity": 100,
+      "unitPrice": 35000
+    }
+  ],
+  "notes": "Urgent order untuk Ramadhan"
+}
+
+### Get All Purchase Orders
+GET {{baseUrl}}/purchase-orders
+Authorization: Bearer {{token}}
+
+### Get PO by ID
+GET {{baseUrl}}/purchase-orders/PO_ID_HERE
+Authorization: Bearer {{token}}
+
+### Submit PO for Approval
+POST {{baseUrl}}/purchase-orders/PO_ID_HERE/submit
+Authorization: Bearer {{token}}
+
+### Approve Purchase Order
+POST {{baseUrl}}/purchase-orders/PO_ID_HERE/approve
+Authorization: Bearer {{token}}
+
+### Mark PO as Shipped
+POST {{baseUrl}}/purchase-orders/PO_ID_HERE/ship
+Authorization: Bearer {{token}}
+
+### Cancel Purchase Order
+POST {{baseUrl}}/purchase-orders/PO_ID_HERE/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Supplier tidak bisa deliver"
+}
+
+### ============================================
+### 9. PROCUREMENT - GOODS RECEIPTS
+### ============================================
+
+### Create Goods Receipt
+# @name createGR
+POST {{baseUrl}}/goods-receipts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "purchaseOrderId": "PO_ID_HERE",
+  "receivedDate": "2025-11-15",
+  "items": [
+    {
+      "itemId": "ITEM_ID_BERAS",
+      "receivedQuantity": 500,
+      "batchNumber": "BATCH20251115001",
+      "expiryDate": "2026-11-15",
+      "qcNotes": "Kualitas baik"
+    },
+    {
+      "itemId": "ITEM_ID_AYAM",
+      "receivedQuantity": 100,
+      "batchNumber": "BATCH20251115002",
+      "expiryDate": "2025-11-20",
+      "qcNotes": "Fresh, suhu dingin"
+    }
+  ],
+  "notes": "Diterima lengkap"
+}
+
+### Get All Goods Receipts
+GET {{baseUrl}}/goods-receipts
+Authorization: Bearer {{token}}
+
+### Perform QC - PASSED
+POST {{baseUrl}}/goods-receipts/GR_ID_HERE/qc
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "PASSED",
+  "qcDate": "2025-11-15",
+  "qcNotes": "Lolos QC, kualitas sesuai standar"
+}
+
+### Perform QC - FAILED
+POST {{baseUrl}}/goods-receipts/GR_ID_HERE/qc
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "FAILED",
+  "qcDate": "2025-11-15",
+  "qcNotes": "Kualitas tidak sesuai, warna beras kusam"
+}
+
+### ============================================
+### 10. PRODUCTION - RECIPES
+### ============================================
+
+### Create Recipe
+# @name createRecipe
+POST {{baseUrl}}/recipes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nasi Box Ayam Rendang",
+  "code": "NBA001",
+  "portionSize": 100,
+  "unit": "PORTION",
+  "description": "Nasi box dengan ayam bumbu rendang",
+  "ingredients": [
+    {
+      "itemId": "ITEM_ID_BERAS",
+      "quantity": 50,
+      "unit": "KG"
+    },
+    {
+      "itemId": "ITEM_ID_AYAM",
+      "quantity": 20,
+      "unit": "KG"
+    },
+    {
+      "itemId": "ITEM_ID_MINYAK",
+      "quantity": 5,
+      "unit": "LITER"
+    }
+  ]
+}
+
+### Get All Recipes
+GET {{baseUrl}}/recipes
+Authorization: Bearer {{token}}
+
+### Get Recipe by ID (with cost calculation)
+GET {{baseUrl}}/recipes/RECIPE_ID_HERE
+Authorization: Bearer {{token}}
+
+### Update Recipe
+PATCH {{baseUrl}}/recipes/RECIPE_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "portionSize": 120,
+  "description": "Updated description"
+}
+
+### ============================================
+### 11. PRODUCTION - WORK ORDERS
+### ============================================
+
+### Create Work Order
+# @name createWO
+POST {{baseUrl}}/work-orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "recipeId": "RECIPE_ID_HERE",
+  "kitchenLocationId": "LOCATION_ID_KITCHEN",
+  "plannedQuantity": 100,
+  "scheduledDate": "2025-11-20",
+  "notes": "Produksi untuk event Jum'at Berkah"
+}
+
+### Get All Work Orders
+GET {{baseUrl}}/work-orders
+Authorization: Bearer {{token}}
+
+### Get WO by ID
+GET {{baseUrl}}/work-orders/WO_ID_HERE
+Authorization: Bearer {{token}}
+
+### Start Production
+POST {{baseUrl}}/work-orders/WO_ID_HERE/start
+Authorization: Bearer {{token}}
+
+### Record Production Output
+POST {{baseUrl}}/work-orders/WO_ID_HERE/output
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "itemId": "ITEM_ID_NASI_BOX",
+  "quantity": 95,
+  "batchNumber": "NBA20251120",
+  "expiryDate": "2025-11-21",
+  "qcPassed": true,
+  "qcNotes": "Kualitas excellent"
+}
+
+### Complete Work Order
+POST {{baseUrl}}/work-orders/WO_ID_HERE/complete
+Authorization: Bearer {{token}}
+
+### Cancel Work Order
+POST {{baseUrl}}/work-orders/WO_ID_HERE/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Bahan tidak cukup"
+}
+
+### ============================================
+### 12. DISTRIBUTION - BENEFICIARIES
+### ============================================
+
+### Create Beneficiary
+# @name createBeneficiary
+POST {{baseUrl}}/beneficiaries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Yayasan Peduli Dhuafa Jakarta",
+  "identityNumber": "YPD-JKT-001",
+  "address": "Jl. Kebajikan No. 123, Jakarta Timur",
+  "phone": "08123456789",
+  "email": "contact@ypd-jakarta.org",
+  "categoryId": "CATEGORY_ID_HERE",
+  "assignedLocationId": "LOCATION_ID_DC"
+}
+
+### Get All Beneficiaries
+GET {{baseUrl}}/beneficiaries
+Authorization: Bearer {{token}}
+
+### Get Beneficiary by ID
+GET {{baseUrl}}/beneficiaries/BENEFICIARY_ID_HERE
+Authorization: Bearer {{token}}
+
+### ============================================
+### 13. DISTRIBUTION - DELIVERY ORDERS
+### ============================================
+
+### Create Delivery Order
+# @name createDO
+POST {{baseUrl}}/delivery-orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "beneficiaryId": "BENEFICIARY_ID_HERE",
+  "workOrderId": "WO_ID_HERE",
+  "sourceLocationId": "LOCATION_ID_KITCHEN",
+  "deliveryDate": "2025-11-21",
+  "items": [
+    {
+      "itemId": "ITEM_ID_NASI_BOX",
+      "quantity": 50,
+      "batchNumber": "NBA20251120"
+    }
+  ],
+  "notes": "Pengiriman Jum'at Berkah"
+}
+
+### Get All Delivery Orders
+GET {{baseUrl}}/delivery-orders
+Authorization: Bearer {{token}}
+
+### Get DO by ID
+GET {{baseUrl}}/delivery-orders/DO_ID_HERE
+Authorization: Bearer {{token}}
+
+### Dispatch Delivery
+POST {{baseUrl}}/delivery-orders/DO_ID_HERE/dispatch
+Authorization: Bearer {{token}}
+
+### Confirm Delivery
+POST {{baseUrl}}/delivery-orders/DO_ID_HERE/confirm
+Authorization: Bearer {{token}}
+
+### Cancel Delivery Order
+POST {{baseUrl}}/delivery-orders/DO_ID_HERE/cancel
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Beneficiary tidak siap menerima"
+}
+
+### ============================================
+### END OF TESTS
+### ============================================

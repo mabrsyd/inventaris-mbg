@@ -1,0 +1,164 @@
+{
+  "components": [
+    {
+      "name": "LoginForm",
+      "path": "components/auth/login-form.tsx",
+      "description": "A form component for user login."
+    },
+    {
+      "name": "RegisterForm",
+      "path": "components/auth/register-form.tsx",
+      "description": "A form component for user registration."
+    },
+    {
+      "name": "Navbar",
+      "path": "components/dashboard/navbar.tsx",
+      "description": "The navigation bar component for the dashboard."
+    },
+    {
+      "name": "Sidebar",
+      "path": "components/dashboard/sidebar.tsx",
+      "description": "The sidebar component for the dashboard."
+    },
+    {
+      "name": "StatsCard",
+      "path": "components/dashboard/stats-card.tsx",
+      "description": "A component that displays statistics in card format."
+    },
+    {
+      "name": "CategoryForm",
+      "path": "components/forms/category-form.tsx",
+      "description": "A form component for creating or editing categories."
+    },
+    {
+      "name": "LocationForm",
+      "path": "components/forms/location-form.tsx",
+      "description": "A form component for creating or editing locations."
+    },
+    {
+      "name": "SupplierForm",
+      "path": "components/forms/supplier-form.tsx",
+      "description": "A form component for creating or editing suppliers."
+    },
+    {
+      "name": "ItemForm",
+      "path": "components/forms/item-form.tsx",
+      "description": "A form component for creating or editing inventory items."
+    },
+    {
+      "name": "PurchaseOrderForm",
+      "path": "components/forms/purchase-order-form.tsx",
+      "description": "A form component for creating or editing purchase orders."
+    },
+    {
+      "name": "GoodsReceiptForm",
+      "path": "components/forms/goods-receipt-form.tsx",
+      "description": "A form component for creating or editing goods receipts."
+    },
+    {
+      "name": "RecipeForm",
+      "path": "components/forms/recipe-form.tsx",
+      "description": "A form component for creating or editing recipes."
+    },
+    {
+      "name": "WorkOrderForm",
+      "path": "components/forms/work-order-form.tsx",
+      "description": "A form component for creating or editing work orders."
+    },
+    {
+      "name": "BeneficiaryForm",
+      "path": "components/forms/beneficiary-form.tsx",
+      "description": "A form component for creating or editing beneficiaries."
+    },
+    {
+      "name": "DeliveryOrderForm",
+      "path": "components/forms/delivery-order-form.tsx",
+      "description": "A form component for creating or editing delivery orders."
+    },
+    {
+      "name": "DataTable",
+      "path": "components/tables/data-table.tsx",
+      "description": "A component that displays data in a table format."
+    },
+    {
+      "name": "DataTablePagination",
+      "path": "components/tables/data-table-pagination.tsx",
+      "description": "A component that handles pagination for data tables."
+    },
+    {
+      "name": "DataTableToolbar",
+      "path": "components/tables/data-table-toolbar.tsx",
+      "description": "A component that contains the toolbar for data tables."
+    },
+    {
+      "name": "Button",
+      "path": "components/ui/button.tsx",
+      "description": "A button component."
+    },
+    {
+      "name": "Card",
+      "path": "components/ui/card.tsx",
+      "description": "A card component."
+    },
+    {
+      "name": "Dialog",
+      "path": "components/ui/dialog.tsx",
+      "description": "A dialog component."
+    },
+    {
+      "name": "Form",
+      "path": "components/ui/form.tsx",
+      "description": "A form component."
+    },
+    {
+      "name": "Input",
+      "path": "components/ui/input.tsx",
+      "description": "An input component."
+    },
+    {
+      "name": "Label",
+      "path": "components/ui/label.tsx",
+      "description": "A label component."
+    },
+    {
+      "name": "Select",
+      "path": "components/ui/select.tsx",
+      "description": "A select dropdown component."
+    },
+    {
+      "name": "Table",
+      "path": "components/ui/table.tsx",
+      "description": "A table component."
+    },
+    {
+      "name": "Toast",
+      "path": "components/ui/toast.tsx",
+      "description": "A toast notification component."
+    },
+    {
+      "name": "Toaster",
+      "path": "components/ui/toaster.tsx",
+      "description": "A toaster component for notifications."
+    },
+    {
+      "name": "Badge",
+      "path": "components/ui/badge.tsx",
+      "description": "A badge component."
+    },
+    {
+      "name": "DropdownMenu",
+      "path": "components/ui/dropdown-menu.tsx",
+      "description": "A dropdown menu component."
+    },
+    {
+      "name": "Tabs",
+      "path": "components/ui/tabs.tsx",
+      "description": "A tabs component."
+    },
+    {
+      "name": "Alert",
+      "path": "components/ui/alert.tsx",
+      "description": "An alert component."
+    }
+  ]
+}

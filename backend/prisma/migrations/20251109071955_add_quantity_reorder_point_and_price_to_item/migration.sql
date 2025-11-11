@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Item" ADD COLUMN     "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "quantity" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "reorderPoint" DOUBLE PRECISION NOT NULL DEFAULT 0;
+
+-- CreateIndex
+CREATE INDEX "Item_quantity_idx" ON "Item"("quantity");

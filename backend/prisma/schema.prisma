@@ -1,0 +1,664 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/////////////////////////
+// ENUMS
+/////////////////////////
+
+enum UserRole {
+  ADMIN
+  WAREHOUSE_STAFF
+  KITCHEN_STAFF
+  DISTRIBUTION_STAFF
+  BENEFICIARY_POINT
+}
+
+enum ItemType {
+  RAW_MATERIAL
+  SEMI_FINISHED
+  FINISHED_GOOD
+}
+
+enum ItemUnit {
+  KG
+  GR
+  LITER
+  ML
+  PACK
+  PCS
+}
+
+enum LocationType {
+  CENTRAL_WAREHOUSE
+  REGIONAL_WAREHOUSE
+  KITCHEN
+  DISTRIBUTION_POINT
+}
+
+enum POStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  CONFIRMED
+  SHIPPED
+  RECEIVED
+  CANCELLED
+}
+
+enum QCStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+enum WorkOrderStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryOrderStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum MutationType {
+  RECEIPT
+  PRODUCTION_INPUT
+  PRODUCTION_OUTPUT
+  DELIVERY
+  ADJUSTMENT
+  WASTE
+}
+
+enum WasteReason {
+  EXPIRED
+  DAMAGED
+  SPOILED
+  DEFECTIVE
+  OTHER
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  APPROVE
+  REJECT
+}
+
+enum DocumentType {
+  PURCHASE_ORDER
+  GOODS_RECEIPT
+  DELIVERY_ORDER
+  WORK_ORDER
+}
+
+/////////////////////////
+// MASTER DATA
+/////////////////////////
+
+model Category {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items Item[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+model Item {
+  id                 String    @id @default(cuid())
+  sku                String    @unique
+  code               String?   @unique
+  name               String
+  description        String?
+  itemType           ItemType
+  unit               ItemUnit
+  categoryId         String?   
+  category           Category? @relation(fields: [categoryId], references: [id])
+  price              Float     @default(0)
+  reorderPoint       Float     @default(0)
+  shelfLifeDays      Int?
+  requiresColdStorage Boolean   @default(false)
+  isConsumable       Boolean   @default(false)
+  nutritionalInfo    Json?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Stock & relations
+  stock             Stock[]
+  stockLedger       StockLedger[]
+  poItems           POItem[]
+  grItems           GRItem[]
+  recipeItems       RecipeItem[]
+  woRecipeItems     WorkOrderRecipeItem[]
+  productionOutputs ProductionOutput[]
+  doItems           DOItem[]
+  mutations         StockMutation[]
+
+  @@index([sku])
+  @@index([itemType])
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+model Location {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  name           String
+  type           LocationType
+  address        String?
+  latitude       Float?
+  longitude      Float?
+  capacityKg     Float?
+  currentLoadKg  Float?       @default(0)
+  phone          String?
+  managerName    String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  users          User[]
+  stock          Stock[]
+  purchaseOrders PurchaseOrder[] @relation("DestinationPO")
+  goodsReceipts  GoodsReceipt[]
+  deliveryAsSource  DeliveryOrder[] @relation("sourceLocation")
+  deliveryAsDest    DeliveryOrder[] @relation("destinationLocation")
+  beneficiaries  LocationBeneficiary[]
+  workOrders     WorkOrder[]
+  stockLedgers   StockLedger[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  fullName     String
+  role         UserRole  @default(WAREHOUSE_STAFF)
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+  isActive     Boolean   @default(true)
+  isApproved   Boolean   @default(false)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[] @relation("user_audit")
+  approvals     Approval[]
+
+  @@index([email])
+  @@index([role])
+  @@index([locationId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/////////////////////////
+// PROCUREMENT & RECEIVING
+/////////////////////////
+
+model Supplier {
+  id        String   @id @default(cuid())
+  code      String?  @unique
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  verified  Boolean  @default(false)
+  rating    Float    @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+
+  @@index([name])
+}
+
+model PurchaseOrder {
+  id                    String    @id @default(cuid())
+  poNumber              String    @unique
+  supplierId            String
+  supplier              Supplier  @relation(fields: [supplierId], references: [id])
+  destinationLocationId String
+  destinationLocation   Location  @relation("DestinationPO", fields: [destinationLocationId], references: [id])
+  documentDate          DateTime  @default(now())
+  expectedDeliveryDate  DateTime?
+  status                POStatus  @default(DRAFT)
+  totalAmount           Float?
+  notes                 String?
+  createdById           String
+  approvedById          String?
+  approvedAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  items      POItem[]
+  goodsReceipts GoodsReceipt[]
+
+  @@index([poNumber])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model POItem {
+  id              String    @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  itemId          String
+  item            Item      @relation(fields: [itemId], references: [id])
+  quantity        Float
+  unitPrice       Float?
+  totalPrice      Float?
+  receivedQuantity Float   @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([purchaseOrderId])
+  @@index([itemId])
+}
+
+model GoodsReceipt {
+  id                String    @id @default(cuid())
+  receiptNumber     String    @unique
+  purchaseOrderId   String?
+  purchaseOrder     PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  locationId        String
+  location          Location  @relation(fields: [locationId], references: [id])
+  receivedDate      DateTime  @default(now())
+  receivedById      String
+  qcStatus          QCStatus  @default(PENDING)
+  qcNotes           String?
+  qcById            String?
+  qcDate            DateTime?
+  referenceDocument String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  items GRItem[]
+
+  @@index([receiptNumber])
+  @@index([purchaseOrderId])
+}
+
+model GRItem {
+  id             String   @id @default(cuid())
+  goodsReceiptId String
+  goodsReceipt   GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  itemId         String
+  item           Item     @relation(fields: [itemId], references: [id])
+  quantity       Float
+  batchNumber    String?
+  expiryDate     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([goodsReceiptId])
+  @@index([itemId])
+}
+
+/////////////////////////
+// PRODUCTION (RECIPE & WORK ORDER)
+/////////////////////////
+
+model Recipe {
+  id              String    @id @default(cuid())
+  code            String?   @unique
+  name            String    @unique
+  description     String?
+  portionSize     Float
+  totalCost       Float?
+  costPerPortion  Float?
+  nutritionalInfo Json?
+  preparationTime Int?
+  cookingTime     Int?
+  instructions    String?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  recipeItems RecipeItem[]
+  workOrders  WorkOrder[]
+
+  @@index([name])
+}
+
+model RecipeItem {
+  id         String   @id @default(cuid())
+  recipeId   String
+  recipe     Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  itemId     String
+  item       Item     @relation(fields: [itemId], references: [id])
+  quantity   Float
+  unit       ItemUnit
+  cost       Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([recipeId])
+  @@index([itemId])
+}
+
+model WorkOrder {
+  id                 String    @id @default(cuid())
+  woNumber           String    @unique
+  recipeId           String
+  recipe             Recipe    @relation(fields: [recipeId], references: [id])
+  kitchenLocationId  String
+  kitchenLocation    Location  @relation(fields: [kitchenLocationId], references: [id])
+  plannedQuantity    Float
+  actualQuantity     Float?
+  plannedPortions    Float?
+  actualPortions     Float?
+  totalCost          Float?
+  scheduledDate      DateTime?
+  startDate          DateTime?
+  completionDate     DateTime?
+  status             WorkOrderStatus @default(PLANNED)
+  notes              String?
+  createdById        String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  recipeItems WorkOrderRecipeItem[]
+  outputs     ProductionOutput[]
+  deliveryOrders DeliveryOrder[]
+  mutations   StockMutation[]
+
+  @@index([woNumber])
+  @@index([recipeId])
+  @@index([status])
+}
+
+model WorkOrderRecipeItem {
+  id          String   @id @default(cuid())
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item     @relation(fields: [itemId], references: [id])
+  quantity    Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workOrderId])
+  @@index([itemId])
+}
+
+model ProductionOutput {
+  id             String   @id @default(cuid())
+  workOrderId    String
+  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  itemId         String
+  item           Item     @relation(fields: [itemId], references: [id])
+  quantity       Float
+  unit           ItemUnit
+  batchNumber    String?
+  productionDate DateTime @default(now())
+  expiryDate     DateTime?
+  qcPassed       Boolean  @default(true)
+  qcNotes        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([workOrderId])
+  @@index([itemId])
+}
+
+/////////////////////////
+// DISTRIBUTION
+/////////////////////////
+
+model Beneficiary {
+  id           String   @id @default(cuid())
+  code         String?  @unique
+  name         String
+  type         String
+  contactPerson String?
+  phone        String?
+  address      String?
+  targetQuota  Float?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  locations      LocationBeneficiary[]
+  deliveryOrders DeliveryOrder[]
+}
+
+model LocationBeneficiary {
+  id            String      @id @default(cuid())
+  locationId    String
+  beneficiaryId String
+  location      Location    @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  isActive      Boolean     @default(true)
+  assignedDate  DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([locationId, beneficiaryId])
+}
+
+model DeliveryOrder {
+  id                    String    @id @default(cuid())
+  doNumber              String    @unique
+  sourceLocationId      String
+  sourceLocation        Location  @relation("sourceLocation", fields: [sourceLocationId], references: [id])
+  destinationLocationId String
+  destinationLocation   Location  @relation("destinationLocation", fields: [destinationLocationId], references: [id])
+  beneficiaryId         String?
+  beneficiary           Beneficiary? @relation(fields: [beneficiaryId], references: [id])
+  workOrderId           String?
+  workOrder             WorkOrder? @relation(fields: [workOrderId], references: [id])
+  scheduledDeliveryDate DateTime?
+  actualDeliveryDate    DateTime?
+  status                DeliveryOrderStatus @default(PENDING)
+  confirmationBy        String?
+  confirmationDate      DateTime?
+  transportInfo         Json?
+  referenceDocument     String?
+  createdById           String
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  items DOItem[]
+  mutations StockMutation[]
+
+  @@index([doNumber])
+  @@index([status])
+}
+
+model DOItem {
+  id              String   @id @default(cuid())
+  deliveryOrderId String
+  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
+  itemId          String
+  item            Item     @relation(fields: [itemId], references: [id])
+  quantity        Float
+  batchNumber     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([deliveryOrderId])
+  @@index([itemId])
+}
+
+/////////////////////////
+// INVENTORY CORE & LEDGER
+/////////////////////////
+
+// Stock represents current aggregated stock per (item, location, optional batch)
+model Stock {
+  id              String   @id @default(cuid())
+  itemId          String
+  item            Item     @relation(fields: [itemId], references: [id])
+  locationId      String
+  location        Location @relation(fields: [locationId], references: [id])
+  batchNumber     String?
+  quantity        Float    @default(0)
+  reservedQuantity Float   @default(0)
+  expiryDate      DateTime?
+  storageLocation String?
+  isLocked        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  mutations       StockMutation[]
+
+  @@unique([itemId, locationId, batchNumber])
+  @@index([itemId])
+  @@index([locationId])
+}
+
+// StockLedger is an append-only chronological ledger for audits and historical queries
+model StockLedger {
+  id            String      @id @default(cuid())
+  itemId        String
+  item          Item        @relation(fields: [itemId], references: [id])
+  locationId    String?
+  location      Location?   @relation(fields: [locationId], references: [id])
+  batchNumber   String?
+  change        Float
+  balance       Float       // resulting balance after applying this ledger entry
+  mutationType  MutationType
+  referenceType String?
+  referenceId   String?
+  workOrderId   String?
+  deliveryOrderId String?
+  createdById   String
+  createdAt     DateTime    @default(now())
+
+  @@index([itemId])
+  @@index([locationId])
+  @@index([createdAt])
+}
+
+// StockMutation is a flexible domain-level event (keeps references to domain documents)
+model StockMutation {
+  id               String      @id @default(cuid())
+  stockId          String?
+  stock            Stock?      @relation(fields: [stockId], references: [id])
+  itemId           String
+  item             Item        @relation(fields: [itemId], references: [id])
+  quantity         Float
+  mutationType     MutationType
+  referenceType    String?
+  referenceId      String?
+  sourceLocationId String?
+  destLocationId   String?
+  workOrderId      String?
+  workOrder        WorkOrder?  @relation(fields: [workOrderId], references: [id])
+  deliveryOrderId  String?
+  deliveryOrder    DeliveryOrder? @relation(fields: [deliveryOrderId], references: [id])
+  wasteReason      WasteReason?
+  wasteQuantity    Float?
+  notes            String?
+  createdById      String
+  createdAt        DateTime    @default(now())
+
+  @@index([itemId])
+  @@index([stockId])
+  @@index([mutationType])
+}
+
+/////////////////////////
+// AUDIT & ACTIVITY LOGS
+/////////////////////////
+
+model AuditLog {
+  id          String     @id @default(cuid())
+  action      String     
+  actionType  ActionType? 
+  entityType  String
+  entityId    String
+  userId      String
+  user        User       @relation("user_audit", fields: [userId], references: [id])
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime   @default(now())
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+/////////////////////////
+// APPROVAL / DOCUMENT WORKFLOW
+/////////////////////////
+
+model Approval {
+  id           String    @id @default(cuid())
+  documentType DocumentType
+  documentId   String
+  approverId   String
+  approver     User?     @relation(fields: [approverId], references: [id])
+  status       ActionType // APPROVE or REJECT stored here as enum values
+  comment      String?
+  decidedAt    DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+
+  @@index([documentType])
+  @@index([documentId])
+}
+
+/////////////////////////
+// MISC / UTILITIES
+/////////////////////////
+
+model SequenceNumber {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  last      Int      @default(0)
+  updatedAt DateTime @default(now())
+}
+
+/////////////////////////
+// SUGGESTED INDEXES (DB MIGRATION / PERFORMANCE NOTES)
+/////////////////////////
+
+// - Create partial indexes for expiryDate queries (WHERE expiryDate IS NOT NULL)
+// - Materialized view for item_stock_summary aggregated per item-location
+// - Consider pg_trgm indexes on name/code columns for faster text search
+
+
+// End of schema
